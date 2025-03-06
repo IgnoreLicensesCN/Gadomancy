@@ -48,7 +48,7 @@ public class RegisteredFamiliarAI_Old {
         @Override
         public boolean canRun(World world, double x, double y, double z, EntityPlayer parent, ItemStack itemStack) {
             int rangeInc = ((ItemFamiliar_Old) itemStack.getItem()).getAttackRangeIncrease(itemStack);
-            return getPotentialTargets(world, parent, rangeInc).size() > 0;
+            return !getPotentialTargets(world, parent, rangeInc).isEmpty();
         }
 
         @Override
@@ -56,7 +56,7 @@ public class RegisteredFamiliarAI_Old {
             int rangeInc = ((ItemFamiliar_Old) itemStack.getItem()).getAttackRangeIncrease(itemStack);
 
             List<EntityLivingBase> lastTargetters = getPotentialTargets(world, parent, rangeInc);
-            if(lastTargetters.size() == 0) {
+            if(lastTargetters.isEmpty()) {
                 FamiliarAIController_Old.cleanTargetterList(parent);
                 return;
             }

@@ -1,6 +1,7 @@
 package makeo.gadomancy.common.data;
 
 import baubles.api.BaublesApi;
+import baubles.common.BaublesExpanded;
 import makeo.gadomancy.client.util.FamiliarHandlerClient;
 import makeo.gadomancy.common.familiar.FamiliarAIController_Old;
 import makeo.gadomancy.common.familiar.FamiliarController;
@@ -14,10 +15,11 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 import thaumcraft.api.aspects.Aspect;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static baubles.api.BaubleType.AMULET;
+import static baubles.api.expanded.BaubleExpandedSlots.*;
 
 /**
  * This class is part of the Gadomancy Mod
@@ -29,11 +31,11 @@ import java.util.Map;
  */
 public class DataFamiliar extends AbstractData {
 
-    private List<FamiliarData> playersWithFamiliar = new ArrayList<FamiliarData>();
-    private Map<EntityPlayer, FamiliarController> familiarControllers = new HashMap<EntityPlayer, FamiliarController>();
+    private List<FamiliarData> playersWithFamiliar = Collections.synchronizedList(new ArrayList<FamiliarData>());
+    private Map<EntityPlayer, FamiliarController> familiarControllers = new ConcurrentHashMap<EntityPlayer, FamiliarController>();
 
-    private List<FamiliarData> addClientQueue = new ArrayList<FamiliarData>();
-    private List<FamiliarData> removeClientQueue = new ArrayList<FamiliarData>();
+    private List<FamiliarData> addClientQueue = Collections.synchronizedList(new ArrayList<FamiliarData>());
+    private List<FamiliarData> removeClientQueue = Collections.synchronizedList(new ArrayList<FamiliarData>());
 
     public boolean hasFamiliar(EntityPlayer player) {
         for(FamiliarData fam : playersWithFamiliar) {
@@ -76,8 +78,9 @@ public class DataFamiliar extends AbstractData {
 
         FamiliarData data = new FamiliarData(player.getCommandSenderName(), aspect.getTag());
 
-        IInventory baublesInv = BaublesApi.getBaubles(player);
-        if(baublesInv.getStackInSlot(0) == null) {
+        ItemStack stack = getFirstEtherealFamiliarFromPlayer(player);
+        
+        if(stack == null) {
             handleUnequip(world, player, aspect);
             return;
         }
@@ -89,17 +92,35 @@ public class DataFamiliar extends AbstractData {
         familiarControllers.get(player).tick();
     }
 
-    public void checkPlayerEquipment(EntityPlayer p) {
+    public static ItemStack getFirstEtherealFamiliarFromPlayer(EntityPlayer p) {
+
         IInventory baublesInv = BaublesApi.getBaubles(p);
-        if(baublesInv.getStackInSlot(0) != null) {
-            ItemStack amulet = baublesInv.getStackInSlot(0);
-            if(amulet.getItem() != null && amulet.getItem() instanceof ItemEtherealFamiliar) {
-                Aspect a = ItemEtherealFamiliar.getFamiliarAspect(amulet);
-                if(a != null) {
-                    handleEquip(p.worldObj, p, a);
-                }
+        for (int slot: getIndexesOfAssignedSlotsOfType(getTypeFromBaubleType(AMULET))){
+            ItemStack stack = baublesInv.getStackInSlot(slot);
+            if (stack != null && stack.getItem() instanceof ItemEtherealFamiliar) {
+                return stack;
             }
         }
+        return null;
+    }
+    
+    public void checkPlayerEquipment(EntityPlayer p) {
+        ItemStack etherealFamiliar = getFirstEtherealFamiliarFromPlayer(p);
+        if (etherealFamiliar != null) {
+            Aspect a = ItemEtherealFamiliar.getFamiliarAspect(etherealFamiliar);
+            if(a != null) {
+                handleEquip(p.worldObj, p, a);
+            }
+        }
+//        if(baublesInv.getStackInSlot(0) != null) {
+//            ItemStack amulet = baublesInv.getStackInSlot(0);
+//            if(amulet.getItem() != null && amulet.getItem() instanceof ItemEtherealFamiliar) {
+//                Aspect a = ItemEtherealFamiliar.getFamiliarAspect(amulet);
+//                if(a != null) {
+//                    handleEquip(p.worldObj, p, a);
+//                }
+//            }
+//        }
     }
 
     @Override

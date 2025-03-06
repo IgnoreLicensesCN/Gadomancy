@@ -198,7 +198,7 @@ public class ItemEtherealFamiliar extends Item implements IBauble {
             DataFamiliar familiarData = SyncDataHolder.getDataServer("FamiliarData");
             Aspect a = getFamiliarAspect(itemStack);
             if(a != null) {
-                familiarData.handleEquip(((EntityPlayer) entity).worldObj, (EntityPlayer) entity, a);
+                familiarData.handleEquip(entity.worldObj, (EntityPlayer) entity, a);
             }
         }
     }
@@ -210,7 +210,7 @@ public class ItemEtherealFamiliar extends Item implements IBauble {
             DataFamiliar familiarData = SyncDataHolder.getDataServer("FamiliarData");
             Aspect a = getFamiliarAspect(itemStack);
             if(a != null) {
-                familiarData.handleUnequip(((EntityPlayer) entity).worldObj, (EntityPlayer) entity, a);
+                familiarData.handleUnequip(entity.worldObj, (EntityPlayer) entity, a);
             }
         }
     }

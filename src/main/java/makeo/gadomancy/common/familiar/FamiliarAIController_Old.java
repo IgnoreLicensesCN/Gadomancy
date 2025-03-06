@@ -1,6 +1,7 @@
 package makeo.gadomancy.common.familiar;
 
 import baubles.api.BaublesApi;
+import makeo.gadomancy.common.data.DataFamiliar;
 import makeo.gadomancy.common.registration.RegisteredFamiliarAI_Old;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -49,7 +50,7 @@ public class FamiliarAIController_Old {
         if(runningTask == null) {
             selectNewTask();
         } else {
-            ItemStack famStack = BaublesApi.getBaubles(owningPlayer).getStackInSlot(0);
+            ItemStack famStack = DataFamiliar.getFirstEtherealFamiliarFromPlayer(owningPlayer);//BaublesApi.getBaubles(owningPlayer).getStackInSlot(0);
             runningTask.tick(ticksInTask, owningPlayer.worldObj, owningPlayer, famStack);
             ticksInTask++;
             if(ticksInTask >= runningTask.getDuration()) {
@@ -78,7 +79,9 @@ public class FamiliarAIController_Old {
         for (int i = 0; i < size; i++) {
             int index = (randIndex + i) % size;
             FamiliarAIProcess_Old process = availableTasks.get(index);
-            if(process.canRun(owningPlayer.worldObj, owningPlayer.posX, owningPlayer.posY, owningPlayer.posZ, owningPlayer, BaublesApi.getBaubles(owningPlayer).getStackInSlot(0)) &&
+            if(process.canRun(owningPlayer.worldObj, owningPlayer.posX, owningPlayer.posY, owningPlayer.posZ, owningPlayer,
+                    DataFamiliar.getFirstEtherealFamiliarFromPlayer(owningPlayer)//BaublesApi.getBaubles(owningPlayer).getStackInSlot(0)
+            ) &&
                     !cooldownProcesses.containsKey(process)) {
                 runningTask = process;
             }
@@ -103,12 +106,12 @@ public class FamiliarAIController_Old {
     }
 
     public static boolean hasLastTargetter(EntityPlayer player) {
-        return targetMap.containsKey(player) && targetMap.get(player).size() >= 1;
+        return targetMap.containsKey(player) && !targetMap.get(player).isEmpty();
     }
 
     public static LinkedList<EntityLivingBase> getLastTargetters(EntityPlayer player) {
         if(!targetMap.containsKey(player)) return null;
-        if(targetMap.get(player).size() < 1) return null;
+        if(targetMap.get(player).isEmpty()) return null;
         return targetMap.get(player);
     }
 

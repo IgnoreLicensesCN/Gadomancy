@@ -2,6 +2,7 @@ package makeo.gadomancy.common.familiar;
 
 import baubles.api.BaublesApi;
 import cpw.mods.fml.common.network.NetworkRegistry;
+import makeo.gadomancy.common.data.DataFamiliar;
 import makeo.gadomancy.common.items.baubles.ItemEtherealFamiliar;
 import makeo.gadomancy.common.network.PacketHandler;
 import makeo.gadomancy.common.network.packets.PacketFamiliarBolt;
@@ -25,6 +26,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+
+import static makeo.gadomancy.lotr.LOTRMobChecker.isHostileToPlayer;
+import static makeo.gadomancy.lotr.LOTRMobChecker.isLOTRMob;
 
 /**
  * This class is part of the Gadomancy Mod
@@ -59,16 +63,16 @@ public class FamiliarController {
 
     public void tick() {
         IInventory baubles = BaublesApi.getBaubles(owningPlayer);
-        ItemStack stack = baubles.getStackInSlot(0);
-        if (stack == null || !(stack.getItem() instanceof ItemEtherealFamiliar)) return;
-
+        ItemStack stack = DataFamiliar.getFirstEtherealFamiliarFromPlayer(owningPlayer);
+        
+        if (stack == null){return;}
+        
         if (tickLastEffect > 0) {
             tickLastEffect--;
             return;
         }
 
         FamiliarAugment.FamiliarAugmentList augments = ItemEtherealFamiliar.getAugments(stack);
-        if (augments == null) return;
 
         if (augments.isEmpty()) {
             doDefaultAttack();
@@ -117,7 +121,8 @@ public class FamiliarController {
                 }
             }
 
-            if (!owningPlayer.capabilities.isCreativeMode && !consumeVisFromInventory(owningPlayer, costs, false)) {
+            if (!owningPlayer.capabilities.isCreativeMode
+                    && !consumeVisFromInventory(owningPlayer, costs, false)) {
                 return;
             }
 
@@ -255,8 +260,8 @@ public class FamiliarController {
 
     private List<EntityLivingBase> selectEntityToAttack(double rad, int amountToSelectMax) {
         List<EntityLivingBase> attackable = getAttackableEntities(rad);
-        if (attackable.size() <= 0) return null;
-        List<EntityLivingBase> entities = new ArrayList<EntityLivingBase>();
+        if (attackable.isEmpty()) return null;
+        List<EntityLivingBase> entities = new ArrayList<>();
         if (attackable.size() <= amountToSelectMax) {
             entities.addAll(attackable);
         } else {
@@ -274,12 +279,13 @@ public class FamiliarController {
         List<EntityLivingBase> entities = owningPlayer.worldObj.getEntitiesWithinAABB(EntityLivingBase.class,
                 AxisAlignedBB.getBoundingBox(x - 0.5, y - 0.5, z - 0.5, x + 0.5, y + 0.5, z + 0.5).expand(rad, rad, rad));
 
-        Iterator<EntityLivingBase> it = entities.iterator();
-        while (it.hasNext()) {
-            EntityLivingBase base = it.next();
-            if (base == null || base.isDead || base instanceof EntityPlayer || !(base instanceof IMob)) it.remove();
-            //TODO remove entities we don't want to attack...
-        }
+        entities.removeIf(base -> base == null
+                    || base.isDead
+                    || base instanceof EntityPlayer
+                    || (
+                            !(base instanceof IMob) && !(isLOTRMob(base) && isHostileToPlayer(owningPlayer,base))
+                )
+        );
 
         return entities;
     }
